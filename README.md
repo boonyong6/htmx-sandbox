@@ -4,7 +4,7 @@
 
 # htmx in a Nutshell
 
-- Can use the `data-` prefix with htmx:
+- You can use the `data-` prefix with htmx:
   ```html
   <a data-hx-post="/click">Click Me!</a>
   ```
@@ -16,12 +16,12 @@
 ## Triggering Requests
 
 - **(Default)** Triggered by the "natural" event:
-  Element | Event
-  --------|------
+  HTML Element | Event
+  -------------|------
   `input`, `textarea` & `select` | `change`
   `form` | `submit`
   Everything else | `click`
-- Use `hx-trigger` attribute to specify the event.
+- Use `hx-trigger` attribute to specify the event-driven trigger.
 
 ## Trigger Modifier
 
