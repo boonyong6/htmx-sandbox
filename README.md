@@ -315,3 +315,69 @@ document.addEventListener('htmx:confirm', function(e) {
   }
 });
 ```
+
+# Attribute Inheritance
+
+- Most attributes are inherited (apply to any children elements).
+  ```html
+  <div hx-confirm="Are you sure?">
+    <button hx-delete="/account">
+      Delete My Account
+    </button>
+    <button hx-put="/account">
+      Update My Account
+    </button>
+    <!-- To undo the inheritance. -->
+    <button hx-confirm="unset" hx-get="/">
+      Cancel
+    </button>
+  </div>
+  ```
+- Set the [`hx-disinherit`](https://htmx.org/attributes/hx-disinherit/) attribute on a **parent node** to **disable** inheritance.
+- Set the `htmx.config.disableInheritance` variable to `true` to disable inheritance entirely/globally. Use the `hx-inherit` attribute to specify inheritance explicitly.
+  ```html
+  <!-- Configure htmx -->
+  <meta name="htmx-config" content='{"disableInheritance": true}'>
+
+  <div hx-target="#tab-container" hx-inherit="hx-target">
+    <a hx-boost="true" href="/tab1">Tab 1</a>
+    <a hx-boost="true" href="/tab2">Tab 2</a>
+    <a hx-boost="true" href="/tab3">Tab 3</a>
+  </div>
+  ```
+
+# Boosting - `hx-boost`
+
+- Convert `<a>` and `<form>` into AJAX requests that, by default, target the `<body>`.
+  ```html
+  <div hx-boost="true">
+    <a href="/blog">Blog</a>
+  </div>
+  ```
+
+## Progressive Enhancement
+
+- `<a>` and `<form>` will fallback to the original behavior if the JavaScript is not enabled.
+- The server side can examine the `HX-Request` header to identify a htmx-driven request.
+
+# Web Sockets & SSE
+
+- Supported via extensions
+  - [SSE extension](https://github.com/bigskysoftware/htmx-extensions/blob/main/src/sse/README.md)
+  - [WebSocket extension](https://github.com/bigskysoftware/htmx-extensions/blob/main/src/ws/README.md)
+
+# History Support - [browser history API](https://developer.mozilla.org/en-US/docs/Web/API/History_API)
+
+- To push the **request URL** into the **browser navigation bar** and add the current state of the page to the **browser's history** (aka history snapshot).
+  ```html
+  <a hx-get="/blog" hx-push-url="true">Blog</a>
+  ```
+- **NOTE:** If you push a URL into the history, you **must** be able to navigate to that URL and get a full page back.
+
+## Undoing DOM Mutation By 3rd Party Libraries
+
+- You will need to clean up the DOM before a snapshot is taken, since some of the 3rd party libraries will be reinitialized when the history content is loaded.
+
+## Disabling History Snapshots
+
+- **Use case:** To prevent sensitive data entering the `localStorage` cache (History navigation will still work).
