@@ -196,7 +196,7 @@ Special Event | Description
     <button type="submit">Submit</button>
   </form>
   ```
-- Example - Send the `htmx:abort` event to an element to cancel any in-flight requests:
+- Example - Send the `htmx:abort` event to an element to cancel any in-flight/in-progress requests:
   ```html
   <!-- Programmatic way -->
   <button id="request-button" hx-post="/example">
@@ -297,9 +297,9 @@ Event | Description
 ### Alternative: Using Events - `htmx:confirm`
 
 ```js
-document.addEventListener('htmx:confirm', function(e) {
-  if (e.target.matches("[confirm-with-sweet-alert='true']")) {
-    e.preventDefault();
+document.body.addEventListener('htmx:confirm', function(evt) {
+  if (evt.target.matches("[confirm-with-sweet-alert='true']")) {
+    evt.preventDefault();
     // sweet alert - https://sweetalert.js.org/guides/
     swal({
       title: "Are you sure?",
@@ -309,7 +309,7 @@ document.addEventListener('htmx:confirm', function(e) {
       dangerMode: true,
     }).then((confirmed) => {
       if (confirmed) {
-        e.detail.issueRequest();
+        evt.detail.issueRequest();
       }
     });
   }
@@ -381,3 +381,127 @@ document.addEventListener('htmx:confirm', function(e) {
 ## Disabling History Snapshots
 
 - **Use case:** To prevent sensitive data entering the `localStorage` cache (History navigation will still work).
+
+# Requests & Responses
+
+- Return `204 - No Content` response code, and htmx will ignore the content of the response.
+
+Event | Description
+------|------------
+`htmx:responseError` | Fired when the server returns a `4xx` or `5xx` error response.
+`htmx:sendError` | Fired when connection error.
+
+## Configuring Response Handling
+
+- Configure the `htmx.config.responseHandling` array to change the default response handling (status code).
+  ```js
+  responseHandling: [
+    // 204 - No Content by default does nothing, but is not an error.
+    {code:"204", swap: false}, 
+    // 2xx & 3xx responses are non-errors and are swapped.
+    {code:"[23]..", swap: true},
+    // 4xx & 5xx responses are not swapped and are errors.
+    {code:"[45]..", swap: false, error: true}, 
+    // Catch all for any other response code.
+    {code:"...", swap: false} 
+  ]
+
+  // Configuration fields: code, swap, error, ignoreTitle, select, target, swapOverride 
+  ```
+- Use the [Response Targets](https://github.com/bigskysoftware/htmx-extensions/blob/main/src/response-targets/README.md) extensions to configure the behavior of response codes declaratively via **attributes**.
+
+## CORS
+
+- **Access-Control headers** to configure on the server in the CORS context:
+  - `Access-Control-Allow-Headers`
+  - `Access-Control-Expose-Headers`
+- [**All** request and response headers that htmx implements.](https://htmx.org/reference/#request_headers)
+
+## Request Headers
+
+- Some noteworthy headers:
+  Header | Description
+  -------|------------
+  `HX-Trigger-Name` | Triggered element `name` if it exists.
+  `HX-Trigger` | Triggered element `id` if it exists.
+
+## Response Headers
+
+- Some noteworthy headers:
+  Header | Description
+  -------|------------
+  `HX-Location` | Do a **redirect** that does not do a full page reload.
+  [`HX-Trigger[-After-(Settle\|Swap)]`](https://htmx.org/headers/hx-trigger/) | To trigger client-side events [after the (settle\|swap) step]
+
+# Validation
+
+- Events to hook to implement **custom validation** and **error handling**.
+  Event | Description
+  ------|------------
+  `htmx:validation:validate` | Fired **before** an element's `checkValidity()`.<br />**Use case:** To add custom validation.
+  `htmx:validation:failed` | Fired when `checkValidity()` returns false (invalid input).
+  `htmx:validation:halted` | Fired when a request is not issued due to validation errors (`event.detail.errors`).
+- Add `hx-validate="true"` to `<input>`, `<textarea>` or `<select>` enables validation before sending requests.
+
+# Extensions
+
+- Use the `hx-ext` attribute to use extensions.
+
+# Events & Logging
+
+- [Events mechanism](https://htmx.org/reference/#events) doubles as the logging system.
+- `htmx:load` event is fired every time an element is loaded into the DOM.
+
+## Use Case 1: Initialize A 3rd Party Library With Events
+
+- `htmx.onLoad()` - A helper method for `htmx:load` event.
+  ```js
+  htmx.onLoad(function(target) {
+    myJavascriptLib.init(target);
+  });
+  ```
+
+## Use Case 2: Configure a Request With Events
+
+- Handle the `htmx:configRequest` event to modify an AJAX request.
+  ```js
+  document.body.addEventListener('htmx:configRequest', function(evt) {
+    // Add a new parameter into the request.
+    evt.detail.parameters['auth_token'] = getAuthToken();
+    // Add a new header into the request.
+    evt.detail.headers['Authentication-Token'] = getAuthToken();
+  })
+  ```
+
+## Use Case 3: Modifying Swapping Behavior With Events
+
+- Handle the `htmx:beforeSwap` event to modify the swap behavior.
+  ```js
+  document.body.addEventListener('htmx:beforeSwap', function (evt) {
+    if (evt.detail.xhr.status === 404) {
+      alert('Error: Could Not Find Resource');
+    } else if (evt.detail.xhr.status === 422) {
+      evt.detail.shouldSwap = true;
+      evt.detail.isError = false;
+    } else if (evt.detail.xhr.status === 418) {
+      evt.detail.shouldSwap = true;
+      evt.detail.target = htmx.find('#teapot');
+    }
+  });
+  ```
+
+## Event Naming
+
+- Camel Case - `htmx:afterSwap`
+- Kebab Case - `htmx:after-swap`
+
+## Logging
+
+- To log `every` event.
+  ```js
+  htmx.logger = function (elt, eventName, eventDetail) {
+    if (console) {
+      console.log(eventName, elt, eventDetail);
+    }
+  }
+  ```
