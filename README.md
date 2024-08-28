@@ -456,8 +456,8 @@ Event | Description
 
 - `htmx.onLoad()` - A helper method for `htmx:load` event.
   ```js
-  htmx.onLoad(function(target) {
-    myJavascriptLib.init(target);
+  htmx.onLoad(function(elt) {
+    myJavascriptLib.init(elt);
   });
   ```
 
@@ -493,7 +493,8 @@ Event | Description
 ## Event Naming
 
 - Camel Case - `htmx:afterSwap`
-- Kebab Case - `htmx:after-swap`
+- Kebab Case - `htmx:after-swap` 
+  - Since HTML attributes are case-insensitive, htmx dispatches events in kebab-case for use in HTML attributes.
 
 ## Logging
 
@@ -505,3 +506,75 @@ Event | Description
     }
   }
   ```
+
+# Debugging
+
+```js
+// Trick 1 - Log every event.
+htmx.logAll();
+
+// Trick 2 - Log events of an element. 
+// Note: Only works from the console of the developer tools.
+monitorEvents(htmx.find('#theElement'));
+```
+
+## Creating Demos
+
+- To reproduce a bug or clarify a usage.
+- htmx hosts a script to **facilitate** demo creation that will install `htmx`, [`hyperscript`](https://hyperscript.org/) (A companion project) and [`mock-requests`](https://www.npmjs.com/package/mock-requests).
+  ```html
+  <script src="https://demo.htmx.org"></script>
+  ```
+- Example:
+  ```html
+  <!-- Load demo environment -->
+  <script src="https://demo.htmx.org"></script>
+
+  <!-- Post to /foo -->
+  <button hx-post="/foo" hx-target="#result">
+    Count Up
+  </button>
+  <output id="result"></output>
+
+  <!-- Respond to /foo with some dynamic content in a template tag -->
+  <script>
+    globalInt = 0;
+  </script>
+  <template url="/foo" delay="500"> <!-- Note the url and delay attributes -->
+    ${globalInt++}
+  </template>
+  ```
+
+# Scripting
+
+- To complement Hypermedia(HTML)-Driven Applications.
+- Hypermedia-friendly scripting
+  - Respect HATEOAS
+    - Should avoid making non-hypermedia exchanges over the network with a server. 
+    - Should avoid the use of `fetch()` and `XMLHttpRequest` that respond JSON.
+    - Should avoid storing complicated state in JavaScript, unless it is for supporting a more sophisticated front-end experience (e.g. widget).
+  - *Use **events** to integrate JavaScript libraries. htmx can listen for the event triggered by 3rd party libraries.
+  - Use **islands** to **isolate** non-hypermedia components.
+  - \[Optional] Inline script
+- Scripting solutions that pair well with htmx:
+  - VanillaJS
+  - [AlpineJS](https://alpinejs.dev/) - Encourages the "inline scripting" approach.
+  - jQuery
+  - [hyperscript](https://hyperscript.org/) - An experimental library created by the htmx team.
+
+## `hx-on:<eventName>` Attributes
+
+- To support inline scripting (pair well with VanillaJS).
+- Example:
+  ```html
+  <button hx-on:click="alert('You clicked me!')">
+    Click Me!
+  </button>
+
+  <button 
+    hx-post="/example"
+    hx-on:htmx:config-request="event.detail.parameters.example = 'Hello Scripting!'">
+    Post Me!
+  </button>
+  ```
+- **Note:** HTML attributes are **case insensitive**, so **camel case** (`htmx:configRequest`) **will not work**.
