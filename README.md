@@ -452,7 +452,7 @@ Event | Description
 - [Events mechanism](https://htmx.org/reference/#events) doubles as the logging system.
 - `htmx:load` event is fired every time an element is loaded into the DOM.
 
-## Use Case 1: Initialize A 3rd Party Library With Events
+## *Use Case 1: Initialize A 3rd Party Library With Events
 
 - `htmx.onLoad()` - A helper method for `htmx:load` event.
   ```js
@@ -460,6 +460,7 @@ Event | Description
     myJavascriptLib.init(elt);
   });
   ```
+- Example: [SortableJS demo](https://htmx.org/examples/sortable/)
 
 ## Use Case 2: Configure a Request With Events
 
@@ -494,7 +495,7 @@ Event | Description
 
 - Camel Case - `htmx:afterSwap`
 - Kebab Case - `htmx:after-swap` 
-  - Since HTML attributes are case-insensitive, htmx dispatches events in kebab-case for use in HTML attributes.
+  - Since HTML attributes are case-insensitive, htmx dispatches events in kebab-case for use in HTML attributes. See [`hx-on:<event-name>` attributes](#hx-oneventname-attributes).
 
 ## Logging
 
@@ -509,14 +510,15 @@ Event | Description
 
 # Debugging
 
-```js
-// Trick 1 - Log every event.
-htmx.logAll();
+- Tools:
+  ```js
+  // Trick 1 - Log every event.
+  htmx.logAll();
 
-// Trick 2 - Log events of an element. 
-// Note: Only works from the console of the developer tools.
-monitorEvents(htmx.find('#theElement'));
-```
+  // Trick 2 - Log events of an element. 
+  // Note: Only works from the developer tools console.
+  monitorEvents(htmx.find('#theElement'));
+  ```
 
 ## Creating Demos
 
@@ -554,6 +556,7 @@ monitorEvents(htmx.find('#theElement'));
     - Should avoid the use of `fetch()` and `XMLHttpRequest` that respond JSON.
     - Should avoid storing complicated state in JavaScript, unless it is for supporting a more sophisticated front-end experience (e.g. widget).
   - *Use **events** to integrate JavaScript libraries. htmx can listen for the event triggered by 3rd party libraries.
+    - Example: [SortableJS demo](https://htmx.org/examples/sortable/)
   - Use **islands** to **isolate** non-hypermedia components.
   - \[Optional] Inline script
 - Scripting solutions that pair well with htmx:
@@ -562,7 +565,7 @@ monitorEvents(htmx.find('#theElement'));
   - jQuery
   - [hyperscript](https://hyperscript.org/) - An experimental library created by the htmx team.
 
-## `hx-on:<eventName>` Attributes
+## `hx-on:<event-name>` Attributes - kebab-case
 
 - To support inline scripting (pair well with VanillaJS).
 - Example:
@@ -577,4 +580,113 @@ monitorEvents(htmx.find('#theElement'));
     Post Me!
   </button>
   ```
-- **Note:** HTML attributes are **case insensitive**, so **camel case** (`htmx:configRequest`) **will not work**.
+- **Note:** HTML attributes are **case-insensitive**, so **camelCase** (`htmx:configRequest`) **will not work**.
+
+# 3rd Party JavaScript - `htmx.process()`
+
+## Use Case 1: Initialize loaded content with htmx attributes from JavaScript
+
+- VanillaJS example:
+  ```js
+  let myDiv = document.getElementById('my-div');
+  fetch('http://example.com/movies.json')
+    .then(response => response.text())
+    .then(data => {
+      myDiv.innerHTML = data;
+      htmx.process(myDiv);
+    });
+  ```
+
+## Use Case 2: Initialize loaded content with htmx attributes from `<template>`
+
+- Templates are not initially part of the DOM.
+- [AlpineJS](https://alpinejs.dev/) example:
+  ```html
+  <div 
+    x-data="{show_new: false}"
+    x-init="$watch('show_new', value => {
+      if (show_new) {
+        htmx.process(document.querySelector('#new_content'));
+      }
+    })">
+    <button @click="show_new = !show_new">Toggle New Content</button>
+    <template x-if="show_new">
+      <div id="new_content">
+        <a hx-get="/server/new-stuff" href="#">New Clickable</a>
+      </div>
+    </template>
+  </div>
+  ```
+
+## Web Components
+
+- [Examples on how to integrate with web components.](https://htmx.org/examples/web-components/)
+
+# Caching
+
+- If the server adds the `Last-Modified` response header, the browser will automatically add the `If-Modified-Since` request header to the next requests to the same URL.
+- If the server can render different content for the same URL depending on other headers (e.g. `HX-Request`), you need to use the `Vary` response header.
+- **Alternative** to `Vary` header - Set `htmx.config.getCacheBusterParam` to `true`.
+
+# Security
+
+## Rule 1: Escape All User Content
+
+- To prevent **XSS attacks**.
+- The content from 3rd party libraries must be sanitized.
+  - Use the `hx-disable` attribute to disable the unintended injected htmx attributes.
+
+## htmx Security Tools
+
+### `hx-disable` (Inherited)
+
+- To prevent processing of all htmx attributes.
+  ```html
+  <div hx-disable>
+    <%= raw(user_content) %>
+  </div>
+  ```
+
+### `hx-history`
+
+- Set the `hx-history` attribute to `false` to omit a given page from the history cache.
+
+### Configuration Options Related to Security
+
+Options | Description
+--------|------------
+`htmx.config.selfRequestsOnly` | `true` to allow only requests to the same domain.
+`htmx.config.allowScriptTags` | `false` to disable `<script>` tags processing.
+`htmx.config.historyCacheSize` | Set it to `0` (represents the  number of entries allowed) to avoid storing any HTML in the `localStorage`.
+`htmx.config.allowEval` | `false` to disable all htmx features rely on `eval()`, including [**event filters**](#trigger-filters), `hx-on:`, `hx-vals` with `js:` and `hx-headers` with `js:`.
+
+### Events
+
+- Handle the `htmx:validateUrl` event to allow requests to some domains beyond the current host.
+  ```js
+  document.body.addEventListener('htmx:validateUrl', function (evt) {
+    if (!evt.detail.sameHost && evt.detail.url.hostname !== 'my-server.com') {
+      // To prevent the request from being issued.
+      evt.preventDefault();
+    }
+  });
+  ```
+
+## Content Security Policy (CSP) Options
+
+- Some capabilities:
+  - To not issue requests to non-origin hosts.
+  - To not evaluate inline script tags.
+- Example - Only allow connections to the original (source) domain:
+  ```html
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self';">
+  ```
+
+# Configuring htmx
+
+- [Configuration options](https://htmx.org/docs/#config) can be accessed/set via:
+  1. JavaScript (programmatically) - `htmx.config.<configOption>`
+  2. `meta` tag (declaratively)
+      ``` html
+      <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML"}'>
+      ```
