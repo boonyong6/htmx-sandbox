@@ -1,6 +1,6 @@
 # Introduction
 
-- Supports AJAX, CSS Transitions, WebSockets and Server Sent Events using **attributes**.
+- Support [AJAX](#ajax), [CSS Transitions](#css-transitions-without-javascript), [WebSockets and Server-Sent Events](#websockets-and-server-sent-events-sse) using **attributes**.
 
 # htmx in a Nutshell
 
@@ -360,11 +360,18 @@ document.body.addEventListener('htmx:confirm', function(evt) {
 - `<a>` and `<form>` will fallback to the original behavior if the JavaScript is not enabled.
 - The server side can examine the `HX-Request` header to identify a htmx-driven request.
 
-# Web Sockets & SSE
+# WebSockets and Server-Sent Events (SSE)
 
 - Supported via extensions
   - [SSE extension](https://github.com/bigskysoftware/htmx-extensions/blob/main/src/sse/README.md)
   - [WebSocket extension](https://github.com/bigskysoftware/htmx-extensions/blob/main/src/ws/README.md)
+- Server-sent events (SSE)
+  - The client connects to **EventSource**, listen for **server-sent events**, swap content in real-time.
+  - Implement code on the server to stream events (Response's Content-Type: `text/event-stream`). Each message is sent as text **terminated by a pair of newlines (`\n\n`)**.
+  - The client works almost identically to WebSockets in part of handling incoming events.
+  - SSE is a one-way (uni-directional) connection.
+  - **Comment** messages (e.g. `: this is a comment`) can be used to prevent connections from timing out.
+  - A lightweight alternative to WebSockets
 
 # History Support - [browser history API](https://developer.mozilla.org/en-US/docs/Web/API/History_API)
 
