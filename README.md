@@ -365,13 +365,21 @@ document.body.addEventListener('htmx:confirm', function(evt) {
 - Supported via extensions
   - [SSE extension](https://github.com/bigskysoftware/htmx-extensions/blob/main/src/sse/README.md)
   - [WebSocket extension](https://github.com/bigskysoftware/htmx-extensions/blob/main/src/ws/README.md)
-- Server-sent events (SSE)
-  - The client connects to **EventSource**, listen for **server-sent events**, swap content in real-time.
-  - Implement code on the server to stream events (Response's Content-Type: `text/event-stream`). Each message is sent as text **terminated by a pair of newlines (`\n\n`)**.
-  - The client works almost identically to WebSockets in part of handling incoming events.
-  - SSE is a one-way (uni-directional) connection.
-  - **Comment** messages (e.g. `: this is a comment`) can be used to prevent connections from timing out.
-  - A lightweight alternative to WebSockets
+    - `htmx.createWebSocket()` - To create a custom WebSocket instance.
+    - `html.config.wsBinaryType` - Define socket's [binaryType](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/binaryType), default to "`blob`".
+
+## Server-sent events (SSE)
+
+- A one-way (uni-directional) connection.
+- The client connects to **EventSource**, listen for **server-sent events**, swap content in real-time.
+- Implement code on the server to stream events (Response's Content-Type: `text/event-stream`). Each message is sent as text **terminated by a pair of newlines (`\n\n`)**.
+- The client works almost identically to WebSockets in part of handling incoming events.
+- **Comment** messages (e.g. `: this is a comment`) can be used to prevent connections from timing out.
+- A lightweight alternative to WebSockets
+
+## WebSockets
+
+- [Learn more](https://github.com/boonyong6/websockets-sandbox)
 
 # History Support - [browser history API](https://developer.mozilla.org/en-US/docs/Web/API/History_API)
 
